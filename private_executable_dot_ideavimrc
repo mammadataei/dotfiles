@@ -1,0 +1,41 @@
+""" -- General --
+let mapleader=" "
+
+set clipboard+=unnamed
+set idearefactormode=keep
+set relativenumber
+set scrolloff=5
+set incsearch
+set hlsearch
+
+""" -- Plugins --
+set NERDTree
+set surround
+set multiple-cursors
+set commentary
+set argtextobj
+set easymotion
+set textobj-entire
+set ReplaceWithRegister
+set ideajoin
+
+"" -- Mappings --
+nmap <leader>mv :action RenameFile<CR>
+nmap <leader>t :action GotoTest<CR>
+nmap <leader>f :action ReformatCode<CR>
+nmap <leader>r :action RenameElement<CR>
+
+nmap <leader>gb :action Git.Branches<CR>
+nmap <leader>gnb :action Git.CreateNewBranch<CR>
+
+nnoremap <CR> :nohlsearch<CR><CR>
+
+nmap <leader>; :action ShowErrorDescription<CR>
+nmap <leader>e :action GotoNextError<CR>
+
+nmap <leader>h :action PreviousTab<CR>
+nmap <leader>l :action NextTab<CR>
+
+nnoremap <leader>sc :source ~/.ideavimrc<CR>
+
+imap jj <ESC>
