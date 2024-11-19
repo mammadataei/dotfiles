@@ -1,0 +1,97 @@
+#!/usr/bin/env -S deno run --allow-run --allow-env --ext=ts
+
+import {
+  Input,
+  Confirm,
+} from "https://deno.land/x/cliffy@v1.0.0-rc.4/prompt/mod.ts";
+import { colors } from "https://deno.land/x/cliffy@v1.0.0-rc.4/ansi/colors.ts";
+
+const error = (msg: string): void =>
+  console.error(colors.bold.red("[ERROR]"), msg);
+
+const info = (msg: string): void =>
+  console.log(colors.bold.blue("[INFO]"), msg);
+
+async function runCommand(
+  command: string,
+  args: string[]
+): Promise<Deno.CommandOutput> {
+  const result = await new Deno.Command(command, { args }).output();
+
+  if (!result.success) {
+    error(`Command failed: ${command} ${args.join(" ")}`);
+    error(new TextDecoder().decode(result.stderr).trim());
+
+    Deno.exit(1);
+  }
+
+  return result;
+}
+
+async function main() {
+  const commit = await Input.prompt({
+    message: "Enter the commit message",
+    minLength: 10,
+    suggestions: [
+      "feat: ",
+      "fix: ",
+      "docs: ",
+      "style: ",
+      "refactor: ",
+      "perf: ",
+      "test: ",
+      "chore: ",
+    ],
+  });
+
+  const branch = await Input.prompt({
+    message: "Enter the branch name",
+    minLength: 10,
+    suggestions: [
+      commit
+        .replace(":", "")
+        .replaceAll(" ", "-")
+        .replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`),
+    ],
+  });
+
+  info(`Creating branch ${branch}...`);
+  await runCommand("git", ["checkout", "-b", branch]);
+  info("Branch created successfully!");
+
+  info("Committing changes...");
+  await runCommand("git", ["commit", "-m", commit]);
+  info("Changes committed successfully!");
+
+  info("Pushing changes...");
+  await runCommand("git", ["push", "origin", branch]);
+  info("Changes pushed successfully!");
+
+  const confirmed = await Confirm.prompt({
+    message: "Do you want to create a pull request?",
+    default: true,
+  });
+
+  if (confirmed) {
+    const body = await Input.prompt({
+      message: "Enter the pull request body (optional)",
+      suggestions: ["resolves #", "fixes #", "closes #", "related to #"],
+    });
+
+    info("Creating pull request...");
+    await runCommand("gh", [
+      "pr",
+      "create",
+      "--fill",
+      ...(body ? ["--body", body] : []),
+    ]);
+    info("Pull request created successfully!");
+  }
+
+  info(`Deleting branch ${branch}...`);
+  await runCommand("git", ["checkout", "-"]);
+  await runCommand("git", ["branch", "-D", branch]);
+  info(`Branch ${branch} deleted successfully!`);
+}
+
+main();
